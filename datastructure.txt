@@ -1,0 +1,13 @@
+#app数据存储格式
+{
+    "fans_num":{"vid":[username,fansnum]},
+    "currchoose":vid,
+    "remvid":[],
+}
+
+#可视化数据存储格式
+{
+    vid:{
+        data:num
+    }
+}

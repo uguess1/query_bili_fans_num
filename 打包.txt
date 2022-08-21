@@ -1,0 +1,2 @@
+pyinstaller --add-data=".\datasets;pyecharts\datasets\." --add-data=".\templates;pyecharts\render\templates\." -F FN.py -w -i 33.ico
+
