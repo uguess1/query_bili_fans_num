@@ -281,6 +281,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                     reversed(tmpdict.items())
                 )
                 set_data(VISUALDATAPATH, content_visual)
+                QMessageBox.information(self,"提示","间隔更新完毕！")
             else:
                 QMessageBox.warning(self, "错误", "未选择对象！")
 
