@@ -1,4 +1,6 @@
+import collections
 import sys
+import time
 
 from PyQt5.QtCore import QFileInfo, QUrl
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -14,6 +16,9 @@ from visual_function.line_chart import Line_Chart
 
 @logger.catch()
 def init_file():
+    """
+    文件初始化
+    """
     # 日志
     logger.add(LOG)
     # 数据
@@ -38,6 +43,9 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
         self.bind_contrl()
 
     def bind_contrl(self):
+        """
+        按钮绑定
+        """
         self.refresh_Button.clicked.connect(self.clicked_refresh_button)
         self.help_Button.clicked.connect(self.clicked_help_button)
 
@@ -61,6 +69,9 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
     # 查询主函数
     @logger.catch()
     def query_and_set(self):
+        """
+        完成查询粉丝数，显示各项数据，并存储的功能
+        """
         if self.spider.get_vmid() == "":
             QMessageBox.critical(self, "错误", "未选择查询用户！")
         else:
@@ -99,6 +110,9 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
 
     @logger.catch()
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
+        """
+        重写关闭函数，实现关闭主页面同时关闭所有打开页面
+        """
         # reply = QMessageBox.question(self, '提示',
         #                              "是否要关闭所有窗口?",
         #                              QMessageBox.Yes | QMessageBox.No,
@@ -122,14 +136,31 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
 class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
     def __init__(self, spider):
         super(Choosepage, self).__init__()
-        self.spider = spider
         self.setupUi(self)
+        self.spider = spider
+        self.visual_path_list = set()
+        self.data_clean_choose.addItems(
+            ["15分钟", "30分钟", "1小时", "6小时", "12小时", "1天", "2天", "3天", "15天", "1月"]
+        )
+        self.data_clean_dict = {
+            "15分钟": 15 * 60,
+            "30分钟": 30 * 60,
+            "1小时": 3600,
+            "6小时": 6 * 3600,
+            "12小时": 12 * 3600,
+            "1天": 24 * 3600,
+            "2天": 48 * 3600,
+            "3天": 72 * 3600,
+            "15天": 15 * 86400,
+            "1月": 30 * 86400,
+        }
         self.bind_contrl()
 
     def bind_contrl(self):
         self.add_button.clicked.connect(self.add)
         self.delete_button.clicked.connect(self.delete)
         self.visual_smooth_line_button.clicked.connect(self.generate_smooth_line_chart)
+        self.data_clean_button.clicked.connect(self.data_clean)
 
     def add(self):
         try:
@@ -140,6 +171,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                     index = my_bisect(self.items_list, gets)
                     self.listWidget.insertItem(
                         index,
+                        # \u3000全角空格，\t要与汉字对齐需要全角空格
                         "{0:\u3000<10}\t({1})".format(self.spider.get_username(), gets),
                     )
                     self.items_list.insert(index, gets)
@@ -209,8 +241,48 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
             print("生成用户 " + name + " 的平滑折线图成功！")
             visual_page.set_show_item(name + "_line_chart.html")
             visual_page.show()
+            self.visual_path_list.add(name + "_line_chart.html")
         else:
             QMessageBox.warning(self, "错误", "未选择要生成粉丝数平滑折线图的对象！")
+
+    def data_clean(self):
+        reply = QMessageBox.warning(
+            self,
+            "警告",
+            "警告！该选项会导致选中用户存储的可视化数据被调整为上诉选择栏所选择的时间间隔，该操作不可逆！\n是否继续？",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            currItem = self.listWidget.currentItem()
+            curr_rows = self.listWidget.row(currItem)
+
+            # 得到选项
+            interval_choose = self.data_clean_choose.currentText()
+            interval_time = self.data_clean_dict[interval_choose]
+
+            # 有选中的项目
+            if curr_rows >= 0:
+                content_visual = get_data(VISUALDATAPATH, DEFAULT_VISUAL_JSON)
+                tmpdict = collections.OrderedDict()
+                visualdict = content_visual[self.items_list[curr_rows]]
+                f = visualdict.popitem()
+                ftime = time.mktime(time.strptime(f[0], FORMAT_TIME))
+                while visualdict:
+                    tmp = visualdict.popitem()
+                    tmptime = time.mktime(time.strptime(tmp[0], FORMAT_TIME))
+                    if ftime - tmptime > interval_time:
+                        tmpdict[f[0]] = f[1]
+                        f = tmp
+                        ftime = time.mktime(time.strptime(f[0], FORMAT_TIME))
+                tmpdict[f[0]] = f[1]
+                print(tmpdict)
+                content_visual[self.items_list[curr_rows]] = collections.OrderedDict(
+                    reversed(tmpdict.items())
+                )
+                set_data(VISUALDATAPATH, content_visual)
+            else:
+                QMessageBox.warning(self, "错误", "未选择对象！")
 
     @logger.catch()
     def get_all_items(self):
@@ -237,6 +309,10 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
             content = json.dumps(content)
             f.write(content)
         main_page.query_line_edit.setText("")
+
+        # 删除生成的可视化文件
+        for p in self.visual_path_list:
+            os.remove(p)
         self.close()
 
     @logger.catch()

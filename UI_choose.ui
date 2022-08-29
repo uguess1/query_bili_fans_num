@@ -13,12 +13,12 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="add_button">
    <property name="geometry">
     <rect>
      <x>290</x>
      <y>10</y>
-     <width>75</width>
+     <width>81</width>
      <height>23</height>
     </rect>
    </property>
@@ -26,7 +26,7 @@
     <string>添加</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="lineEdit">
+  <widget class="QLineEdit" name="add_line_edit">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -36,12 +36,12 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_2">
+  <widget class="QPushButton" name="delete_button">
    <property name="geometry">
     <rect>
      <x>290</x>
      <y>40</y>
-     <width>75</width>
+     <width>81</width>
      <height>23</height>
     </rect>
    </property>
@@ -59,17 +59,40 @@
     </rect>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton_3">
+  <widget class="QPushButton" name="visual_smooth_line_button">
    <property name="geometry">
     <rect>
      <x>290</x>
      <y>70</y>
-     <width>75</width>
+     <width>81</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
     <string>平滑折线图</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="data_clean_button">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>130</y>
+     <width>81</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>可视数据清洗</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="data_clean_choose">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>100</y>
+     <width>81</width>
+     <height>22</height>
+    </rect>
    </property>
   </widget>
  </widget>
