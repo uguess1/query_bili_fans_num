@@ -139,13 +139,11 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
         self.setupUi(self)
         self.spider = spider
         self.visual_path_list = set()
-        self.data_clean_choose.addItems(
-            ["15分钟", "30分钟", "1小时", "6小时", "12小时", "1天", "2天", "3天", "15天", "1月"]
-        )
         self.data_clean_dict = {
             "15分钟": 15 * 60,
             "30分钟": 30 * 60,
             "1小时": 3600,
+            "2小时": 2 * 3600,
             "6小时": 6 * 3600,
             "12小时": 12 * 3600,
             "1天": 24 * 3600,
@@ -154,6 +152,9 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
             "15天": 15 * 86400,
             "1月": 30 * 86400,
         }
+        self.data_clean_choose.addItems(
+            list(self.data_clean_dict.keys())
+        )
         self.bind_contrl()
 
     def bind_contrl(self):
@@ -281,7 +282,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                     reversed(tmpdict.items())
                 )
                 set_data(VISUALDATAPATH, content_visual)
-                QMessageBox.information(self,"提示","间隔更新完毕！")
+                QMessageBox.information(self, "提示", "间隔更新完毕！")
             else:
                 QMessageBox.warning(self, "错误", "未选择对象！")
 
