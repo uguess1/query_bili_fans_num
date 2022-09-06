@@ -1,6 +1,5 @@
-import collections
 import sys
-import time
+
 
 from PyQt5.QtCore import QFileInfo, QUrl
 from PyQt5.QtWebEngineWidgets import QWebEngineView
@@ -40,27 +39,27 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         # 爬虫
         self.spider = spider
-        self.bind_contrl()
+        self._bind_contrl()
 
-    def bind_contrl(self):
+    def _bind_contrl(self):
         """
         按钮绑定
         """
-        self.refresh_Button.clicked.connect(self.clicked_refresh_button)
-        self.help_Button.clicked.connect(self.clicked_help_button)
+        self.refresh_Button.clicked.connect(self._clicked_refresh_button)
+        self.help_Button.clicked.connect(self._clicked_help_button)
 
     # 刷新
-    def clicked_refresh_button(self):
+    def _clicked_refresh_button(self):
         try:
             gets = self.query_line_edit.text()
             if gets == "":
-                self.query_and_set()
+                self.__query_and_set()
             # 启动菜单
             elif gets == "#1":
                 choose_page.show()
             elif gets.isdigit():
                 self.spider.set_vmid(gets)
-                self.query_and_set()
+                self.__query_and_set()
             else:
                 QMessageBox.critical(self, "错误", "输入错误！")
         except Exception as e:
@@ -68,7 +67,7 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
 
     # 查询主函数
     @logger.catch()
-    def query_and_set(self):
+    def __query_and_set(self):
         """
         完成查询粉丝数，显示各项数据，并存储的功能
         """
@@ -105,7 +104,7 @@ class Mainpage(QtWidgets.QMainWindow, Ui_MainWindow):
             else:
                 QMessageBox.critical(self, "错误", "请输入正确的uid！")
 
-    def clicked_help_button(self):
+    def _clicked_help_button(self):
         help_page.show()
 
     @logger.catch()
@@ -152,18 +151,16 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
             "15天": 15 * 86400,
             "1月": 30 * 86400,
         }
-        self.data_clean_choose.addItems(
-            list(self.data_clean_dict.keys())
-        )
-        self.bind_contrl()
+        self.data_clean_choose.addItems(list(self.data_clean_dict.keys()))
+        self._bind_contrl()
 
-    def bind_contrl(self):
-        self.add_button.clicked.connect(self.add)
-        self.delete_button.clicked.connect(self.delete)
-        self.visual_smooth_line_button.clicked.connect(self.generate_smooth_line_chart)
-        self.data_clean_button.clicked.connect(self.data_clean)
+    def _bind_contrl(self):
+        self.add_button.clicked.connect(self._add)
+        self.delete_button.clicked.connect(self._delete)
+        self.visual_smooth_line_button.clicked.connect(self._generate_smooth_line_chart)
+        self.data_clean_button.clicked.connect(self._data_clean)
 
-    def add(self):
+    def _add(self):
         try:
             gets = self.add_line_edit.text().strip()
             res_code = self.spider.get_fans(gets)
@@ -184,6 +181,9 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                         self.spider.get_username(),
                         self.spider.get_fans_num(),
                     )
+                    set_rem_visual_num(
+                        VISUALDATAPATH, gets, self.spider.get_fans_num(),
+                    )
                 else:
                     QMessageBox.warning(self, "消息", "该uid已存在,请勿重复添加！")
             else:
@@ -193,7 +193,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                 "添加功能函数出错:{0},输入为:{1}".format(e.args, self.add_line_edit.text())
             )
 
-    def delete(self):
+    def _delete(self):
         try:
             if self.listWidget.count() == 0:
                 QMessageBox.warning(self, "错误", "列表为空！")
@@ -211,9 +211,12 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                 set_data(DATAPATH, content)
 
                 # 删除可视化数据
-                content_visual = get_data(VISUALDATAPATH, DEFAULT_VISUAL_JSON)
-                del content_visual[self.items_list[curr_rows]]
-                set_data(VISUALDATAPATH, content_visual)
+                try:
+                    content_visual = get_data(VISUALDATAPATH, DEFAULT_VISUAL_JSON)
+                    del content_visual[self.items_list[curr_rows]]
+                    set_data(VISUALDATAPATH, content_visual)
+                except:
+                    logger.error('删除可视化数据时出错！')
 
                 self.items_set.remove(self.items_list[curr_rows])
                 del self.items_list[curr_rows]
@@ -230,7 +233,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                 )
             )
 
-    def generate_smooth_line_chart(self):
+    def _generate_smooth_line_chart(self):
         currItem = self.listWidget.currentItem()
         currRow = self.listWidget.row(currItem)
         if currRow >= 0:
@@ -239,14 +242,14 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
             name = content["fans_num"][mid][0]
             smooth = True
             Line_Chart(mid, name, VISUALDATAPATH, smooth)
-            print("生成用户 " + name + " 的平滑折线图成功！")
+            # print("生成用户 " + name + " 的平滑折线图成功！")
             visual_page.set_show_item(name + "_line_chart.html")
             visual_page.show()
             self.visual_path_list.add(name + "_line_chart.html")
         else:
             QMessageBox.warning(self, "错误", "未选择要生成粉丝数平滑折线图的对象！")
 
-    def data_clean(self):
+    def _data_clean(self):
         reply = QMessageBox.warning(
             self,
             "警告",
@@ -277,7 +280,6 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                         f = tmp
                         ftime = time.mktime(time.strptime(f[0], FORMAT_TIME))
                 tmpdict[f[0]] = f[1]
-                print(tmpdict)
                 content_visual[self.items_list[curr_rows]] = collections.OrderedDict(
                     reversed(tmpdict.items())
                 )
@@ -287,7 +289,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
                 QMessageBox.warning(self, "错误", "未选择对象！")
 
     @logger.catch()
-    def get_all_items(self):
+    def __get_all_items(self):
         data = get_data(DATAPATH, DEFAULT_JSON)
         item_list = data["remvid"]
         item_show = [
@@ -319,7 +321,7 @@ class Choosepage(QtWidgets.QMainWindow, Ui_ChooseWindow):
 
     @logger.catch()
     def showEvent(self, event: QtGui.QShowEvent) -> None:
-        self.items_list, tmp_items_show = self.get_all_items()
+        self.items_list, tmp_items_show = self.__get_all_items()
         self.items_set = set(self.items_list)
         self.listWidget.clear()
         self.listWidget.addItems(tmp_items_show)
